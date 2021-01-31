@@ -11,7 +11,6 @@ using Wiz.Template.Domain.Interfaces.Services;
 using Wiz.Template.Domain.Interfaces.UoW;
 using Wiz.Template.Domain.Models;
 using Wiz.Template.Domain.Models.Dapper;
-using Wiz.Template.Domain.Notifications;
 using Wiz.Template.Unit.Tests.Mocks;
 using Xunit;
 
@@ -21,32 +20,32 @@ namespace Wiz.Template.Unit.Tests.Services
     {
         private readonly Mock<ICustomerRepository> _customerRepositoryMock;
         private readonly Mock<IViaCEPService> _viaCEPServiceMock;
-        private readonly IDomainNotification _domainNotification;
+        private readonly Mock<IDomainNotification> _domainNotificationMock;
         private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+        private readonly Mock<IMapper> _mapperMock;
         private readonly IMapper _mapper;
 
         public CustomerServiceTest()
         {
             _customerRepositoryMock = new Mock<ICustomerRepository>();
             _viaCEPServiceMock = new Mock<IViaCEPService>();
-            _domainNotification = new DomainNotification();
+            _domainNotificationMock = new Mock<IDomainNotification>();
             _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _mapperMock = new Mock<IMapper>();
             _mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile(new MappingProfiles())));
         }
 
         [Fact]
         public async Task GetAll_ReturnCustomerAddressViewModelTestAsync()
         {
-            var cep = "17052520";
-
             _customerRepositoryMock.Setup(x => x.GetAllAsync())
                 .ReturnsAsync(CustomerMock.CustomerAddressModelFaker.Generate(3));
 
-            _viaCEPServiceMock.Setup(x => x.GetByCEPAsync(cep))
+            _viaCEPServiceMock.Setup(x => x.GetByCEPAsync(It.IsAny<string>()))
                 .ReturnsAsync(ViaCEPMock.ViaCEPModelFaker.Generate());
 
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
                 _unitOfWorkMock.Object, _mapper);
 
             var customeMethod = await customerService.GetAllAsync();
@@ -60,14 +59,18 @@ namespace Wiz.Template.Unit.Tests.Services
         [Fact]
         public async Task GetById_ReturnCustomerViewModelTestAsync()
         {
+            int id = 1;
             var customerId = CustomerMock.CustomerIdViewModelFaker.Generate();
 
-            _customerRepositoryMock.Setup(x => x.GetByIdAsync(customerId.Id))
+            _customerRepositoryMock.Setup(x => x.GetByIdAsync(id))
                 .ReturnsAsync(CustomerMock.CustomerModelFaker.Generate());
 
+            _mapperMock.Setup(x => x.Map<CustomerViewModel>(It.IsAny<Customer>()))
+                .Returns(CustomerMock.CustomerViewModelFaker.Generate());
+
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
-                _unitOfWorkMock.Object, _mapper);
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
+                _unitOfWorkMock.Object, _mapperMock.Object);
 
             var customeMethod = await customerService.GetByIdAsync(customerId);
 
@@ -79,14 +82,18 @@ namespace Wiz.Template.Unit.Tests.Services
         [Fact]
         public async Task GetAddressByIdAsync_ReturnCustomerAddressViewModelTestAsync()
         {
+            int id = 1;
             var customerId = CustomerMock.CustomerIdViewModelFaker.Generate();
 
-            _customerRepositoryMock.Setup(x => x.GetAddressByIdAsync(customerId.Id))
+            _customerRepositoryMock.Setup(x => x.GetAddressByIdAsync(id))
                 .ReturnsAsync(CustomerMock.CustomerAddressModelFaker.Generate());
 
+            _mapperMock.Setup(x => x.Map<CustomerAddressViewModel>(It.IsAny<CustomerAddress>()))
+                .Returns(CustomerMock.CustomerAddressViewModelFaker.Generate());
+
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
-                _unitOfWorkMock.Object, _mapper);
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
+                _unitOfWorkMock.Object, _mapperMock.Object);
 
             var customeMethod = await customerService.GetAddressByIdAsync(customerId);
 
@@ -98,14 +105,18 @@ namespace Wiz.Template.Unit.Tests.Services
         [Fact]
         public async Task GetAddressByNameAsync_ReturnCustomerAddressViewModelTestAsync()
         {
+            var name = "Diuor PleaBolosmakh";
             var customerName = CustomerMock.CustomerNameViewModelFaker.Generate();
 
-            _customerRepositoryMock.Setup(x => x.GetByNameAsync(customerName.Name))
+            _customerRepositoryMock.Setup(x => x.GetByNameAsync(name))
                 .ReturnsAsync(CustomerMock.CustomerAddressModelFaker.Generate());
 
+            _mapperMock.Setup(x => x.Map<CustomerAddressViewModel>(It.IsAny<CustomerAddress>()))
+                .Returns(CustomerMock.CustomerAddressViewModelFaker.Generate());
+
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
-                _unitOfWorkMock.Object, _mapper);
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
+                _unitOfWorkMock.Object, _mapperMock.Object);
 
             var customeMethod = await customerService.GetAddressByNameAsync(customerName);
 
@@ -119,12 +130,18 @@ namespace Wiz.Template.Unit.Tests.Services
         {
             var customer = CustomerMock.CustomerViewModelFaker.Generate();
 
+            _mapperMock.Setup(x => x.Map<Customer>(It.IsAny<CustomerViewModel>()))
+                .Returns(CustomerMock.CustomerModelFaker.Generate());
+
+            _mapperMock.Setup(x => x.Map<CustomerViewModel>(It.IsAny<Customer>()))
+                .Returns(CustomerMock.CustomerViewModelFaker.Generate());
+
             _customerRepositoryMock.Setup(x => x.GetByNameAsync(customer.Name))
                 .ReturnsAsync(CustomerMock.CustomerAddressModelFaker.Generate());
 
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
-                _unitOfWorkMock.Object, _mapper);
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
+                _unitOfWorkMock.Object, _mapperMock.Object);
 
             customerService.Add(customer);
 
@@ -136,9 +153,12 @@ namespace Wiz.Template.Unit.Tests.Services
         {
             var customer = CustomerMock.CustomerViewModelFaker.Generate();
 
+            _mapperMock.Setup(x => x.Map<Customer>(It.IsAny<CustomerViewModel>()))
+                .Returns(CustomerMock.CustomerModelFaker.Generate());
+
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
-                _unitOfWorkMock.Object, _mapper);
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
+                _unitOfWorkMock.Object, _mapperMock.Object);
 
             customerService.Update(customer);
 
@@ -150,9 +170,12 @@ namespace Wiz.Template.Unit.Tests.Services
         {
             var customer = CustomerMock.CustomerViewModelFaker.Generate();
 
+            _mapperMock.Setup(x => x.Map<Customer>(It.IsAny<CustomerViewModel>()))
+                .Returns(CustomerMock.CustomerModelFaker.Generate());
+
             var customerService = new CustomerService(_customerRepositoryMock.Object,
-                _viaCEPServiceMock.Object, _domainNotification,
-                _unitOfWorkMock.Object, _mapper);
+                _viaCEPServiceMock.Object, _domainNotificationMock.Object,
+                _unitOfWorkMock.Object, _mapperMock.Object);
 
             customerService.Remove(customer);
 

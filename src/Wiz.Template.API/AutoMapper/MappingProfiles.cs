@@ -15,20 +15,10 @@ namespace Wiz.Template.API.AutoMapper
         {
             #region Customer
 
-            CreateMap<CustomerAddress, CustomerAddressViewModel>()
-                .ForMember(customerAddressVM => customerAddressVM.Address, cfg => cfg.MapFrom(customerAddress => customerAddress));
-
-            CreateMap<CustomerAddress, AddressViewModel>()
-                .ForMember(x => x.Id, cfg => cfg.MapFrom(x => x.AddressId))
-                .ReverseMap();
-
-            CreateMap<Customer, CustomerViewModel>()
-                .ReverseMap();
-
-            CreateMap<AddressViewModel, Address>()
-                .ReverseMap();
-
+            CreateMap<CustomerAddress, CustomerAddressViewModel>();
+            CreateMap<Customer, CustomerViewModel>().ReverseMap();
             CreateMap<ViaCEP, AddressViewModel>();
+            CreateMap<Address, AddressViewModel>().ReverseMap();
 
             #endregion
         }

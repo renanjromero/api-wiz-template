@@ -38,7 +38,9 @@ namespace Wiz.Template.API.Services
             foreach (var customer in customers)
             {
                 var address = await _viaCEPService.GetByCEPAsync(customer.CEP);
-                _mapper.Map<ViaCEP, AddressViewModel>(address, customer.Address);
+
+                customer.Address = _mapper.Map<AddressViewModel>(address);
+                customer.Address.Id = customer.AddressId;              
             }
 
             return customers;
