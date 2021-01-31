@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Wiz.Template.API.Services.Interfaces;
+using Wiz.Template.API.ViewModels.Address;
 using Wiz.Template.API.ViewModels.Customer;
 using Wiz.Template.Domain.Interfaces.Notifications;
 using Wiz.Template.Domain.Interfaces.Repository;
 using Wiz.Template.Domain.Interfaces.Services;
 using Wiz.Template.Domain.Interfaces.UoW;
 using Wiz.Template.Domain.Models;
+using Wiz.Template.Domain.Models.Services;
 using Wiz.Template.Domain.Validation.CustomerValidation;
 
 namespace Wiz.Template.API.Services
@@ -36,11 +38,7 @@ namespace Wiz.Template.API.Services
             foreach (var customer in customers)
             {
                 var address = await _viaCEPService.GetByCEPAsync(customer.CEP);
-
-                customer.Address.Id = customer.AddressId;
-                customer.Address.Street = address?.Street;
-                customer.Address.StreetFull = address?.StreetFull;
-                customer.Address.UF = address?.UF;
+                _mapper.Map<ViaCEP, AddressViewModel>(address, customer.Address);
             }
 
             return customers;
